@@ -50,7 +50,7 @@ BOARD_EGL_CFG := device/semc/msm7x30-common/rootdir/system/etc/egl.cfg
 TARGET_NO_INITLOGO := true
 
 # Audio
-TARGET_QCOM_AUDIO_VARIANT := caf
+TARGET_QCOM_AUDIO_VARIANT := legacy
 BOARD_USES_GENERIC_AUDIO := false
 BOARD_USES_QCOM_AUDIO_RESETALL := true
 BOARD_USES_QCOM_AUDIO_VOIPMUTE := true
