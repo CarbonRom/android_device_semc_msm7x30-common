@@ -56,7 +56,7 @@ BOOTREC_LED_BLUE="/sys/class/leds/blue/brightness"
 BOOTREC_LED_BUTTONS_RGB1="/sys/class/leds/button-backlight-rgb1/brightness"
 BOOTREC_LED_BUTTONS_RGB2="/sys/class/leds/button-backlight-rgb2/brightness"
 
-keypad_input=''
+keypad_input='2'
 for input in `busybox ls -d /sys/class/input/input*`
 do
 	type=`busybox cat ${input}/name`
@@ -66,20 +66,23 @@ do
     esac
 done
 
-# trigger amber LED & button-backlight
-busybox echo 30 > /sys/class/timed_output/vibrator/enable
-busybox echo 255 > ${BOOTREC_LED_RED}
-busybox echo 0 > ${BOOTREC_LED_GREEN}
-busybox echo 255 > ${BOOTREC_LED_BLUE}
-busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB1}
-busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB2}
+if [ ! -f /cache/recovery/boot ]; then
+	# trigger amber LED & button-backlight
+	busybox echo 30 > /sys/class/timed_output/vibrator/enable
+	busybox echo 255 > ${BOOTREC_LED_RED}
+	busybox echo 0 > ${BOOTREC_LED_GREEN}
+	busybox echo 255 > ${BOOTREC_LED_BLUE}
+	busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB1}
+	busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB2}
 
-# keycheck
-busybox cat /dev/input/event${keypad_input} > /dev/keycheck&
-busybox echo $! > /dev/keycheck.pid
-busybox sleep 3
-busybox echo 30 > /sys/class/timed_output/vibrator/enable
-busybox kill -9 $(cat /dev/keycheck.pid)
+	# keycheck
+	busybox echo "[${keypad_input}]" >>boot.txt
+	busybox cat /dev/input/event${keypad_input} > /dev/keycheck&
+	busybox echo $! > /dev/keycheck.pid
+	busybox sleep 3
+	busybox echo 30 > /sys/class/timed_output/vibrator/enable
+	busybox kill -9 $(busybox cat /dev/keycheck.pid)
+fi
 
 # mount cache
 busybox mount -t yaffs2 /dev/block/mtdblock${MTDCACHE} /cache
@@ -102,6 +105,7 @@ then
 	busybox echo 0 > /sys/module/msm_fb/parameters/align_buffer
 	# recovery ramdisk
 	load_image=/sbin/ramdisk-recovery.cpio
+	busybox sleep 2
 else
 	busybox echo 'ANDROID BOOT' >>boot.txt
 	# poweroff LED & button-backlight
@@ -116,6 +120,9 @@ fi
 
 # unpack the ramdisk image
 busybox cpio -i < ${load_image}
+
+#remove ramdisk to save RAM
+busybox rm -f /sbin/ramdisk*.cpio
 
 busybox umount /cache
 busybox umount /proc

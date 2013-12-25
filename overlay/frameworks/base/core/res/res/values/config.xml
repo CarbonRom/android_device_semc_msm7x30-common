@@ -24,7 +24,7 @@
     <bool name="config_animateScreenLights">false</bool>
 
     <!-- True will enable the screen-on animation. -->
-    <!--<bool name="config_screenOnAnimation">true</bool>-->
+    <!--< bool name="config_screenOnAnimation">true</bool>-->
 
     <!-- Disable lockscreen rotation by default -->
     <bool name="config_enableLockScreenRotation">true</bool>
@@ -152,16 +152,4 @@
          This feature should be disabled for most devices. -->
     <integer name="config_virtualKeyQuietTimeMillis">250</integer>
 
-    <!-- Device supports LED flashlight -->
-    <bool name="config_enableTorch">true</bool>
-
-    <!-- Defines the system property to set for performance profile xe: sys.cpu.modes. Leave it
-         blank if the device do not support performance profiles -->
-    <string name="config_perf_profile_prop" translatable="false">sys.perf.profile</string>
-
-    <!-- When config_perf_profile_prop is defined, this value MUST be the index of
-         one of the listes values in frameworks/base/core/res/res/values/cm_arrays.xml
-         for "perf_profile_values" array. Leave it blank if the device do not support
-         performance profiles  -->
-    <string name="config_perf_profile_default_entry" translatable="false">1</string>
 </resources>

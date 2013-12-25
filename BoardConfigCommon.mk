@@ -76,15 +76,6 @@ BOARD_NEEDS_MEMORYHEAPPMEM := true
 COMMON_GLOBAL_CFLAGS += -DDISABLE_HW_ID_MATCH_CHECK
 COMMON_GLOBAL_CFLAGS += -DSEMC_ICS_CAMERA_BLOB -DNEEDS_VECTORIMPL_SYMBOLS
 
-# Recovery
-TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
-BOARD_CUSTOM_BOOTIMG_MK := device/semc/msm7x30-common/custombootimg.mk
-TARGET_RECOVERY_PRE_COMMAND := "touch /cache/recovery/boot;sync;"
-TARGET_RECOVERY_FSTAB := device/semc/msm7x30-common/rootdir/fstab.semc
-BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/semc/msm7x30-common/recovery/recovery_keys.c
-TARGET_USE_CUSTOM_LUN_FILE_PATH := "/sys/devices/platform/msm_hsusb/gadget/lun%d/file"
-TARGET_RECOVERY_LCD_BACKLIGHT_PATH := \"/sys/class/leds/lcd-backlight/brightness\"
-
 # Kernel
 TARGET_KERNEL_SOURCE := kernel/semc/msm7x30
 BOARD_KERNEL_CMDLINE := # This is ignored by sony's bootloader

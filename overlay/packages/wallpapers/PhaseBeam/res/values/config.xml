@@ -15,6 +15,4 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <!-- Adreno 205 is not powerful enough to handle horizontal scrolling without lag -->
-    <bool name="scrolling_enabled">false</bool>
 </resources>

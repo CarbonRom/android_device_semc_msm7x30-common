@@ -43,7 +43,8 @@ PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/rootdir/fstab.semc:root/fstab.semc \
     $(COMMON_PATH)/rootdir/init.semc.rc:root/init.semc.rc \
     $(COMMON_PATH)/rootdir/ueventd.semc.rc:root/ueventd.semc.rc \
-    $(COMMON_PATH)/rootdir/sbin/postrecoveryboot.sh:root/sbin/postrecoveryboot.sh
+    $(COMMON_PATH)/rootdir/sbin/postrecoveryboot.sh:root/sbin/postrecoveryboot.sh \
+    $(COMMON_PATH)/rootdir/sbin/rebootrecovery.sh:root/sbin/rebootrecovery.sh
 
 # Common keylayouts
 PRODUCT_COPY_FILES += \
@@ -183,7 +184,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # For applications to determine if they should turn off specific memory-intensive
 # features that work poorly on low-memory devices.
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.config.low_ram=false \
+    ro.config.low_ram=true \
     ro.zram.default=18
 
 # Extra debugging props
