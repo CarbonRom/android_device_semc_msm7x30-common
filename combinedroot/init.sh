@@ -46,8 +46,7 @@ do
 	num=`busybox expr 64 + $i`
 	busybox mknod -m 600 /dev/input/event${i} c 13 $num
 done
-MTDCACHE=`busybox cat /proc/mtd | busybox grep cache | busybox awk -F ':' {'print $1'} | busybox sed 's/mtd//'`
-busybox mknod -m 600 /dev/block/mtdblock${MTDCACHE} b 31 $MTDCACHE
+busybox mknod -m 600 /dev/block/mtdblock2 b 31 2
 
 # leds & backlight configuration
 BOOTREC_LED_RED="/sys/class/leds/red/brightness"
@@ -65,8 +64,6 @@ do
     (*)        ;;
     esac
 done
-
-if [ ! -f /cache/recovery/boot ]; then
 	# trigger amber LED & button-backlight
 	busybox echo 30 > /sys/class/timed_output/vibrator/enable
 	busybox echo 255 > ${BOOTREC_LED_RED}
@@ -76,22 +73,20 @@ if [ ! -f /cache/recovery/boot ]; then
 	busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB2}
 
 	# keycheck
-	busybox echo "[${keypad_input}]" >>boot.txt
-	busybox cat /dev/input/event${keypad_input} > /dev/keycheck&
+	busybox cat /dev/input/event2 > /dev/keycheck&
 	busybox echo $! > /dev/keycheck.pid
 	busybox sleep 3
 	busybox echo 30 > /sys/class/timed_output/vibrator/enable
 	busybox kill -9 $(busybox cat /dev/keycheck.pid)
-fi
 
 # mount cache
-busybox mount -t yaffs2 /dev/block/mtdblock${MTDCACHE} /cache
+busybox mount -t yaffs2 /dev/block/mtdblock2 /cache
 
 # android ramdisk
 load_image=/sbin/ramdisk.cpio
 
 # boot decision
-if [ -s /dev/keycheck -o -e /cache/recovery/boot ]
+if [ ! -f /cache/recovery/boot ];
 then
 	busybox echo 'RECOVERY BOOT' >>boot.txt
 	busybox rm -fr /cache/recovery/boot
