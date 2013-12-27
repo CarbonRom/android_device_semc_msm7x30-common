@@ -16,37 +16,38 @@
 set +x
 _PATH="$PATH"
 export PATH=/sbin
+export BB=/sbin/busybox
 
-busybox cd /
-busybox date >>boot.txt
+cd /
+$BB date >>boot.txt
 exec >>boot.txt 2>&1
-busybox rm /init
+$BB rm /init
 
 # create directories & mount filesystems
-busybox mount -o remount,rw rootfs /
+$BB mount -o remount,rw rootfs /
 
-busybox mkdir -p /sys /tmp /proc /data /dev /system/bin /cache
-busybox mount -t sysfs sysfs /sys
-busybox mount -t proc proc /proc
-busybox mkdir /dev/input /dev/graphics /dev/block /dev/log
+$BB mkdir -p /sys /tmp /proc /data /dev /system/bin /cache
+$BB mount -t sysfs sysfs /sys
+$BB mount -t proc proc /proc
+$BB mkdir /dev/input /dev/graphics /dev/block /dev/log
 
 # create device nodes
-busybox mknod -m 666 /dev/null c 1 3
-busybox mknod -m 666 /dev/graphics/fb0 c 29 0
-busybox mknod -m 666 /dev/tty0 c 4 0
-busybox mknod -m 600 /dev/block/mmcblk0 b 179 0
-busybox mknod -m 666 /dev/log/system c 10 19
-busybox mknod -m 666 /dev/log/radio c 10 20
-busybox mknod -m 666 /dev/log/events c 10 21
-busybox mknod -m 666 /dev/log/main c 10 22
-busybox mknod -m 666 /dev/ashmem c 10 37
-busybox mknod -m 666 /dev/urandom c 1 9
+$BB mknod -m 666 /dev/null c 1 3
+$BB mknod -m 666 /dev/graphics/fb0 c 29 0
+$BB mknod -m 666 /dev/tty0 c 4 0
+$BB mknod -m 600 /dev/block/mmcblk0 b 179 0
+$BB mknod -m 666 /dev/log/system c 10 19
+$BB mknod -m 666 /dev/log/radio c 10 20
+$BB mknod -m 666 /dev/log/events c 10 21
+$BB mknod -m 666 /dev/log/main c 10 22
+$BB mknod -m 666 /dev/ashmem c 10 37
+$BB mknod -m 666 /dev/urandom c 1 9
 for i in 0 1 2 3 4 5 6 7 8 9
 do
-	num=`busybox expr 64 + $i`
-	busybox mknod -m 600 /dev/input/event${i} c 13 $num
+num=`$BB expr 64 + $i`
+$BB mknod -m 600 /dev/input/event${i} c 13 $num
 done
-busybox mknod -m 600 /dev/block/mtdblock2 b 31 2
+$BB mknod -m 600 /dev/block/mtdblock2 b 31 2
 
 # leds & backlight configuration
 BOOTREC_LED_RED="/sys/class/leds/red/brightness"
@@ -56,74 +57,85 @@ BOOTREC_LED_BUTTONS_RGB1="/sys/class/leds/button-backlight-rgb1/brightness"
 BOOTREC_LED_BUTTONS_RGB2="/sys/class/leds/button-backlight-rgb2/brightness"
 
 keypad_input='2'
-for input in `busybox ls -d /sys/class/input/input*`
+for input in `$BB ls -d /sys/class/input/input*`
 do
-	type=`busybox cat ${input}/name`
-	case "$type" in
-    (*keypad*) keypad_input=`busybox echo $input | busybox sed 's/^.*input//'`;;
+type=`$BB cat ${input}/name`
+case "$type" in
+    (*keypad*) keypad_input=`$BB echo $input | $BB sed 's/^.*input//'`;;
     (*)        ;;
     esac
 done
-	# trigger amber LED & button-backlight
-	busybox echo 30 > /sys/class/timed_output/vibrator/enable
-	busybox echo 255 > ${BOOTREC_LED_RED}
-	busybox echo 0 > ${BOOTREC_LED_GREEN}
-	busybox echo 255 > ${BOOTREC_LED_BLUE}
-	busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB1}
-	busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB2}
 
-	# keycheck
-	busybox cat /dev/input/event2 > /dev/keycheck&
-	busybox echo $! > /dev/keycheck.pid
-	busybox sleep 3
-	busybox echo 30 > /sys/class/timed_output/vibrator/enable
-	busybox kill -9 $(busybox cat /dev/keycheck.pid)
+# trigger amber LED & button-backlight
+busybox echo 30 > /sys/class/timed_output/vibrator/enable
+busybox echo 255 > ${BOOTREC_LED_RED}
+busybox echo 0 > ${BOOTREC_LED_GREEN}
+busybox echo 255 > ${BOOTREC_LED_BLUE}
+busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB1}
+busybox echo 255 > ${BOOTREC_LED_BUTTONS_RGB2}
+
+# keycheck
+$BB cat /dev/input/event${keypad_input} > /dev/keycheck & KCPID=${!}
+$BB sleep 3
+$BB echo 30 > /sys/class/timed_output/vibrator/enable
+
+# kill the keycheck process
+$BB kill -9 ${KCPID}
 
 # mount cache
-busybox mount -t yaffs2 /dev/block/mtdblock2 /cache
+$BB mount -t yaffs2 /dev/block/mtdblock2 /cache
+$BB mount -o remount,rw /cache
+
 
 # android ramdisk
 load_image=/sbin/ramdisk.cpio
 
 # boot decision
-if [ ! -f /cache/recovery/boot ];
+if [ -s /dev/keycheck -o -e /cache/recovery/boot ]
 then
-	busybox echo 'RECOVERY BOOT' >>boot.txt
-	busybox rm -fr /cache/recovery/boot
-	# trigger blue led
-	busybox echo 0 > ${BOOTREC_LED_RED}
-	busybox echo 0 > ${BOOTREC_LED_GREEN}
-	busybox echo 255 > ${BOOTREC_LED_BLUE}
-	busybox echo 0 > ${BOOTREC_LED_BUTTONS_RGB1}
-	busybox echo 0 > ${BOOTREC_LED_BUTTONS_RGB2}
-	# framebuffer fix
-	busybox echo 0 > /sys/module/msm_fb/parameters/align_buffer
-	# recovery ramdisk
-	load_image=/sbin/ramdisk-recovery.cpio
-	busybox sleep 2
+$BB echo 'RECOVERY BOOT' >>boot.txt
+$BB rm -fr /cache/recovery/boot
+# trigger blue led
+$BB echo 0 > ${BOOTREC_LED_RED}
+$BB echo 0 > ${BOOTREC_LED_GREEN}
+$BB echo 255 > ${BOOTREC_LED_BLUE}
+$BB echo 0 > ${BOOTREC_LED_BUTTONS_RGB1}
+$BB echo 0 > ${BOOTREC_LED_BUTTONS_RGB2}
+# framebuffer fix
+$BB echo 0 > /sys/module/msm_fb/parameters/align_buffer
+# recovery ramdisk
+load_image=/sbin/ramdisk-recovery.cpio
 else
-	busybox echo 'ANDROID BOOT' >>boot.txt
-	# poweroff LED & button-backlight
-	busybox echo 0 > ${BOOTREC_LED_RED}
-	busybox echo 0 > ${BOOTREC_LED_GREEN}
-	busybox echo 0 > ${BOOTREC_LED_BLUE}
-	busybox echo 0 > ${BOOTREC_LED_BUTTONS_RGB1}
-	busybox echo 0 > ${BOOTREC_LED_BUTTONS_RGB2}
-	# framebuffer fix
-	busybox echo 1 > /sys/module/msm_fb/parameters/align_buffer
+$BB echo 'ANDROID BOOT' >>boot.txt
+# poweroff LED & button-backlight
+$BB echo 0 > ${BOOTREC_LED_RED}
+$BB echo 0 > ${BOOTREC_LED_GREEN}
+$BB echo 0 > ${BOOTREC_LED_BLUE}
+$BB echo 0 > ${BOOTREC_LED_BUTTONS_RGB1}
+$BB echo 0 > ${BOOTREC_LED_BUTTONS_RGB2}
+# framebuffer fix
+$BB echo 1 > /sys/module/msm_fb/parameters/align_buffer
 fi
 
 # unpack the ramdisk image
-busybox cpio -i < ${load_image}
+$BB cpio -i < ${load_image}
 
 #remove ramdisk to save RAM
-busybox rm -f /sbin/ramdisk*.cpio
+$BB rm -f /sbin/ramdisk*.cpio
 
-busybox umount /cache
-busybox umount /proc
-busybox umount /sys
+# Create a symlink in /sbin for each command kernel busybox knows
+for sym in $($BB --list | $BB grep -v '^su$'); do
+# Don't overwrite existing files not to mess up recoveries
+if [ ! -e "/sbin/$sym" ]; then
+$BB ln -sf "$BB" "/sbin/$sym"
+fi
+done
 
-busybox rm -fr /dev/*
-busybox date >>boot.txt
+$BB umount /cache
+$BB umount /proc
+$BB umount /sys
+
+$BB rm -fr /dev/*
+$BB date >>boot.txt
 export PATH="${_PATH}"
 exec /init
