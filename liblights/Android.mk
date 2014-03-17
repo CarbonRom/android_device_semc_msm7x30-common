@@ -34,10 +34,6 @@ ifneq ($(filter phoenix urushi zeus zeusc, $(TARGET_DEVICE)),)
     LOCAL_CFLAGS += -DNO_BUTTON_BACKLIGHT
 endif
 
-ifneq ($(filter coconut, $(TARGET_DEVICE)),)
-    LOCAL_CFLAGS += -DHAVE_MUSIC_LIGHT
-endif
-
 LOCAL_MODULE := lights.$(TARGET_BOARD_PLATFORM)
 
 LOCAL_MODULE_TAGS := optional
