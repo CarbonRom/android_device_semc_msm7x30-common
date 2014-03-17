@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
  * Copyright (C) 2011 Diogo Ferreira <defer@cyanogenmod.com>
- * Copyright (C) 2012-2013 The CyanogenMod Project <http://www.cyanogenmod.org>
+ * Copyright (C) 2012-2014 The CyanogenMod Project <http://www.cyanogenmod.org>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,6 +189,22 @@ static int set_light_keyboard (struct light_device_t* dev, struct light_state_t 
 	return err;
 }
 
+static int set_light_music (struct light_device_t* dev, struct light_state_t const* state) {
+	int err = 0;
+#ifdef HAVE_MUSIC_LIGHT
+	size_t i = 0;
+	int brightness = rgb_to_brightness(state);
+
+	pthread_mutex_lock(&g_lock);
+	ALOGV("%s brightness = %d", __func__, brightness);
+	for (i = 0; i < sizeof(MUSIC_LIGHT_FILE)/sizeof(MUSIC_LIGHT_FILE[0]); i++) {
+		err |= write_int (MUSIC_LIGHT_FILE[i], brightness);
+	}
+	pthread_mutex_unlock(&g_lock);
+#endif
+	return err;
+}
+
 static void set_shared_light_locked (struct light_device_t *dev, struct light_state_t *state) {
 	int r, g, b;
 	size_t i = 0;
@@ -315,6 +331,8 @@ static int open_lights (const struct hw_module_t* module, char const* name,
 		set_light = set_light_battery;
 	else if (0 == strcmp(LIGHT_ID_NOTIFICATIONS, name))
 		set_light = set_light_notifications;
+	else if (0 == strcmp(LIGHT_ID_MUSIC, name))
+		set_light = set_light_music;
 	else
 		return -EINVAL;
 
@@ -337,11 +355,11 @@ static struct hw_module_methods_t lights_module_methods = {
 };
 
 struct hw_module_t HAL_MODULE_INFO_SYM = {
-	.tag		= HARDWARE_MODULE_TAG,
-	.version_major	= 1,
-	.version_minor	= 0,
-	.id		= LIGHTS_HARDWARE_MODULE_ID,
-	.name		= "SEMC lights module",
-	.author		= "Diogo Ferreira <defer@cyanogenmod.com>, Andreas Makris <Andreas.Makris@gmail.com>",
-	.methods	= &lights_module_methods,
+	.tag = HARDWARE_MODULE_TAG,
+	.module_api_version = 1,
+	.hal_api_version = HARDWARE_HAL_API_VERSION,
+	.id = LIGHTS_HARDWARE_MODULE_ID,
+	.name = "SEMC lights module",
+	.author = "Diogo Ferreira <defer@cyanogenmod.com>, Andreas Makris <Andreas.Makris@gmail.com>",
+	.methods = &lights_module_methods,
 };

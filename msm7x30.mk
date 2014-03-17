@@ -42,8 +42,12 @@ PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/rootdir/system/etc/audio_policy.conf:system/etc/audio_policy.conf \
     $(COMMON_PATH)/rootdir/fstab.semc:root/fstab.semc \
     $(COMMON_PATH)/rootdir/init.semc.rc:root/init.semc.rc \
-    $(COMMON_PATH)/rootdir/ueventd.semc.rc:root/ueventd.semc.rc \
-    $(COMMON_PATH)/rootdir/sbin/postrecoveryboot.sh:root/sbin/postrecoveryboot.sh
+    $(COMMON_PATH)/rootdir/ueventd.semc.rc:root/ueventd.semc.rc
+
+# Reboot to recovery related scripts
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/rootdir/sbin/postrecoveryboot.sh:recovery/root/sbin/postrecoveryboot.sh \
+    $(COMMON_PATH)/rootdir/system/bin/pre-recovery.sh:system/bin/pre-recovery.sh
 
 # Common keylayouts
 PRODUCT_COPY_FILES += \
@@ -106,12 +110,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     libnetcmdiface
 
-# Support for Browser's saved page feature. This allows
-# for pages saved on previous versions of the OS to be
-# viewed on the current OS.
-PRODUCT_PACKAGES += \
-    libskia_legacy
-
 # we have enough storage space to hold precise GC data
 PRODUCT_TAGS += dalvik.gc.type-precise
 
@@ -129,6 +127,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     wifi.supplicant_scan_interval=15 \
     ro.com.google.locationfeatures=1 \
+    ro.com.google.clientidbase.ms=android-sonymobile \
     ro.product.locale.language=en \
     ro.product.locale.region=US \
     ro.use_data_netmgrd=true \
@@ -164,13 +163,13 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.vold.umsdirtyratio=50
 
-# Fix camcorder
-PRODUCT_PROPERTY_OVERRIDES += \
-    debug.camcorder.disablemeta=1
-
 # Enable repeatable keys in CWM
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.cwm.enable_key_repeat=true
+
+# Prefer .tar backup format in CWM
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.cwm.prefer_tar=true
 
 # Fix screenshots with legacy FB
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -180,11 +179,18 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.zygote.disable_gl_preload=1
 
+# HACK: Use old Webkit for pmem compatibility
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.webview.provider=classic
+
 # For applications to determine if they should turn off specific memory-intensive
 # features that work poorly on low-memory devices.
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.config.low_ram=false \
-    ro.zram.default=18
+    ro.config.low_ram=true
+
+# Enable KSM by default
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.ksm.default=1
 
 # Extra debugging props
 PRODUCT_PROPERTY_OVERRIDES += \

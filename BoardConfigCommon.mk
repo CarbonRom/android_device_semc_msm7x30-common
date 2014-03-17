@@ -37,6 +37,7 @@ TARGET_ARCH_LOWMEM := true
 # QCOM Hardware
 BOARD_USES_QCOM_HARDWARE := true
 COMMON_GLOBAL_CFLAGS += -DQCOM_HARDWARE
+TARGET_USE_QCOM_BIONIC_OPTIMIZATION := true
 
 # Display
 TARGET_QCOM_DISPLAY_VARIANT := legacy
@@ -57,7 +58,8 @@ TARGET_NO_INITLOGO := true
 TARGET_ENABLE_QC_AV_ENHANCEMENTS := true
 
 # Audio
-TARGET_QCOM_AUDIO_VARIANT := legacy
+TARGET_QCOM_AUDIO_VARIANT := caf
+BOARD_USES_LEGACY_ALSA_AUDIO := true
 BOARD_USES_GENERIC_AUDIO := false
 BOARD_USES_QCOM_AUDIO_RESETALL := true
 BOARD_USES_QCOM_AUDIO_VOIPMUTE := true
@@ -70,6 +72,9 @@ BOARD_VENDOR_QCOM_GPS_LOC_API_AMSS_VERSION := 50000
 # Bluetooth
 BOARD_HAVE_BLUETOOTH := true
 
+# HACK: Use old Webkit for pmem compatibility
+TARGET_FORCE_CPU_UPLOAD := true
+
 # Camera
 TARGET_DISABLE_ARM_PIE := true
 BOARD_NEEDS_MEMORYHEAPPMEM := true
@@ -78,8 +83,8 @@ COMMON_GLOBAL_CFLAGS += -DSEMC_ICS_CAMERA_BLOB -DNEEDS_VECTORIMPL_SYMBOLS
 # Recovery
 TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
 BOARD_CUSTOM_BOOTIMG_MK := device/semc/msm7x30-common/custombootimg.mk
-TARGET_RECOVERY_PRE_COMMAND := "touch /cache/recovery/boot;sync;"
-TARGET_RECOVERY_FSTAB := device/semc/msm7x30-common/rootdir/fstab.semc
+TARGET_RECOVERY_PRE_COMMAND := "/system/bin/pre-recovery.sh \#"
+TARGET_RECOVERY_FSTAB := device/semc/msm7x30-common/rootdir/recovery.fstab
 BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/semc/msm7x30-common/recovery/recovery_keys.c
 TARGET_USE_CUSTOM_LUN_FILE_PATH := "/sys/devices/platform/msm_hsusb/gadget/lun%d/file"
 TARGET_RECOVERY_LCD_BACKLIGHT_PATH := \"/sys/class/leds/lcd-backlight/brightness\"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2013, The CyanogenMod Project
+ * Copyright (C) 2012-2014, The CyanogenMod Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,15 +36,23 @@
 
 /* SEMC parameter names */
 static char KEY_EX_VIDEO_STABILIZER[] = "semc-vs";
+static char KEY_EX_SUPPORTED_VIDEO_STABILIZERS[] = "semc-vs-values";
 static char KEY_EX_VIDEO_MODE[] = "semc-video-mode";
 static char KEY_EX_METERING_MODE[] = "semc-metering-mode";
 static char KEY_EX_SUPPORTED_METERING_MODES[] = "semc-metering-mode-values";
 static char KEY_EX_MAX_MULTI_FOCUS_NUM[] = "semc-max-multi-focus-num";
-static char KEY_EX_SUPPORTED_SCENE_DETECTIONS[] = "semc-scene-detect-supported";
 
 /* SEMC parameter values */
 static char EX_ON[] = "on";
 static char EX_OFF[] = "off";
+
+/* QCOM parameter names */
+static char KEY_QC_DIS_MODE[] = "dis";
+static char KEY_QC_SUPPORTED_DIS_MODES[] = "dis-values";
+
+/* QCOM parameter values */
+static char KEY_QC_DIS_ENABLE[] = "enable";
+static char KEY_QC_DIS_DISABLE[] = "disable";
 
 
 static android::Mutex gCameraWrapperLock;
@@ -56,24 +64,26 @@ static int camera_get_number_of_cameras(void);
 static int camera_get_camera_info(int camera_id, struct camera_info *info);
 
 static struct hw_module_methods_t camera_module_methods = {
-    open: camera_device_open
+    .open = camera_device_open
 };
 
 camera_module_t HAL_MODULE_INFO_SYM = {
-    common: {
-         tag: HARDWARE_MODULE_TAG,
-         version_major: 1,
-         version_minor: 0,
-         id: CAMERA_HARDWARE_MODULE_ID,
-         name: "Xperia Camera Wrapper",
-         author: "The CyanogenMod Project",
-         methods: &camera_module_methods,
-         dso: NULL, /* remove compilation warnings */
-         reserved: {0}, /* remove compilation warnings */
+    .common = {
+         .tag = HARDWARE_MODULE_TAG,
+         .module_api_version = CAMERA_MODULE_API_VERSION_1_0,
+         .hal_api_version = HARDWARE_HAL_API_VERSION,
+         .id = CAMERA_HARDWARE_MODULE_ID,
+         .name = "Xperia msm7x30 Camera Wrapper",
+         .author = "The CyanogenMod Project, Michael Bestas",
+         .methods = &camera_module_methods,
+         .dso = NULL, /* remove compilation warnings */
+         .reserved = {0}, /* remove compilation warnings */
     },
-    get_number_of_cameras: camera_get_number_of_cameras,
-    get_camera_info: camera_get_camera_info,
-    set_callbacks: NULL,
+    .get_number_of_cameras = camera_get_number_of_cameras,
+    .get_camera_info = camera_get_camera_info,
+    .set_callbacks = NULL, /* remove compilation warnings */
+    .get_vendor_tag_ops = NULL, /* remove compilation warnings */
+    .reserved = {0}, /* remove compilation warnings */
 };
 
 typedef struct wrapper_camera_device {
@@ -108,6 +118,13 @@ void camera_fixup_capability(android::CameraParameters *params)
 {
     ALOGV("%s", __FUNCTION__);
 
+    /* Video stabilization */
+    if (params->get(KEY_EX_VIDEO_STABILIZER)) {
+        if (params->get(KEY_EX_SUPPORTED_VIDEO_STABILIZERS)) {
+            params->set(KEY_QC_SUPPORTED_DIS_MODES, "enable,disable");
+        }
+    }
+
     /* Metering mode */
     if (params->get(KEY_EX_METERING_MODE)) {
         char buffer[255];
@@ -139,8 +156,26 @@ static char *camera_fixup_getparams(int id, const char *settings)
         params.set(android::CameraParameters::KEY_EXPOSURE_COMPENSATION_STEP, "1");
     }
 
+    /* Video recording mode */
+    const char *recordingHint = params.get(android::CameraParameters::KEY_RECORDING_HINT);
+    if (recordingHint) {
+        if (strcmp(recordingHint, android::CameraParameters::TRUE) == 0) {
+            /* Video stabilization */
+            const char *videoStabilizer = params.get(KEY_EX_VIDEO_STABILIZER);
+            if (videoStabilizer) {
+                if (strcmp(videoStabilizer, EX_ON) == 0) {
+                    params.set(KEY_QC_DIS_MODE, KEY_QC_DIS_ENABLE);
+                } else if (strcmp(videoStabilizer, EX_OFF) == 0) {
+                    params.set(KEY_QC_DIS_MODE, KEY_QC_DIS_DISABLE);
+                }
+            }
+        } else if (strcmp(recordingHint, android::CameraParameters::FALSE) == 0) {
+            params.set(KEY_QC_DIS_MODE, KEY_QC_DIS_DISABLE);
+        }
+    }
+
     /* Metering mode */
-    const char* meteringMode = params.get(KEY_EX_METERING_MODE);
+    const char *meteringMode = params.get(KEY_EX_METERING_MODE);
     if (meteringMode) {
         if (strcmp(meteringMode, "frame-average") == 0) {
             params.set(android::CameraParameters::KEY_AUTO_EXPOSURE, android::CameraParameters::AUTO_EXPOSURE_FRAME_AVG);
@@ -152,7 +187,7 @@ static char *camera_fixup_getparams(int id, const char *settings)
     }
 
     /* Max focus areas */
-    const char* multiFocusNum = params.get(KEY_EX_MAX_MULTI_FOCUS_NUM);
+    const char *multiFocusNum = params.get(KEY_EX_MAX_MULTI_FOCUS_NUM);
     if (multiFocusNum) {
         params.set(android::CameraParameters::KEY_MAX_NUM_FOCUS_AREAS, multiFocusNum);
     }
@@ -178,12 +213,20 @@ static char *camera_fixup_setparams(int id, const char *settings)
     params.dump();
 #endif
 
-    /* Video stabilization */
+    /* Video recording mode */
     const char *recordingHint = params.get(android::CameraParameters::KEY_RECORDING_HINT);
     if (recordingHint) {
         if (strcmp(recordingHint, android::CameraParameters::TRUE) == 0) {
             params.set(KEY_EX_VIDEO_MODE, EX_ON);
-            params.set(KEY_EX_VIDEO_STABILIZER, EX_ON);
+            /* Video stabilization */
+            const char *videoStabilizer = params.get(KEY_QC_DIS_MODE);
+            if (videoStabilizer) {
+                if (strcmp(videoStabilizer, KEY_QC_DIS_ENABLE) == 0) {
+                    params.set(KEY_EX_VIDEO_STABILIZER, EX_ON);
+                } else if (strcmp(videoStabilizer, KEY_QC_DIS_DISABLE) == 0) {
+                    params.set(KEY_EX_VIDEO_STABILIZER, EX_OFF);
+                }
+            }
         } else if (strcmp(recordingHint, android::CameraParameters::FALSE) == 0) {
             params.set(KEY_EX_VIDEO_MODE, EX_OFF);
             params.set(KEY_EX_VIDEO_STABILIZER, EX_OFF);
@@ -338,7 +381,8 @@ static int camera_store_meta_data_in_buffers(struct camera_device *device,
     if (!device)
         return -EINVAL;
 
-    return VENDOR_CALL(device, store_meta_data_in_buffers, enable);
+    // Our ICS camera blobs do not support storing metadata in buffers
+    return -EINVAL;
 }
 
 static int camera_start_recording(struct camera_device *device)
