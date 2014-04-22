@@ -144,6 +144,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
     com.qc.hardware=true \
     debug.sf.hw=1 \
     debug.egl.hw=1 \
+    debug.composition.type=dyn \
     debug.mdpcomp.logs=0 \
     hwui.disable_vsync=true
     persist.hwc.mdpcomp.enable=false \
