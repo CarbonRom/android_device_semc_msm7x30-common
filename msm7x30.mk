@@ -1,4 +1,3 @@
-# Copyright (C) 2011-2013 The CyanogenMod Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -157,7 +156,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Resampler quality
 PRODUCT_PROPERTY_OVERRIDES += \
-    af.resampler.quality=255
+    af.resampler.quality=255 \
+    lpa.decode=true \
+    audio.decoder_override_check=true \
+    use.non-omx.mp3.decoder=true \
+    use.non-omx.aac.decoder=true
 
 # Set default USB interface
 PRODUCT_PROPERTY_OVERRIDES += \
