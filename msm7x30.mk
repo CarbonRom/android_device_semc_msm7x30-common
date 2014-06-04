@@ -157,10 +157,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Resampler quality
 PRODUCT_PROPERTY_OVERRIDES += \
     af.resampler.quality=255 \
-    lpa.decode=true \
-    audio.decoder_override_check=true \
-    use.non-omx.mp3.decoder=true \
-    use.non-omx.aac.decoder=true
 
 # Set default USB interface
 PRODUCT_PROPERTY_OVERRIDES += \
