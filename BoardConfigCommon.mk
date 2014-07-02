@@ -125,3 +125,6 @@ TARGET_PROVIDES_LIBLIGHT := true
 
 # CM Hardware tunables
 BOARD_HARDWARE_CLASS := device/semc/msm7x30-common/cmhw
+
+# External apps on SD
+TARGET_EXTERNAL_APPS = sdcard1
