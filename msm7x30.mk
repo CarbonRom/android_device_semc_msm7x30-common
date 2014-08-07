@@ -98,7 +98,6 @@ PRODUCT_PACKAGES += \
     libOmxCore \
     libOmxVdec \
     libOmxVenc \
-    libmm-omxcore \
     libc2dcolorconvert
 
 # Misc
